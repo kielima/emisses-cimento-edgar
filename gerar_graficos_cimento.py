@@ -11,11 +11,14 @@ PATH = "EDGAR_AR5_GHG_1970_2024/EDGAR_AR5_GHG_1970_2024.xlsx"
 df = pd.read_excel(PATH, sheet_name="IPCC 2006", header=9)
 cement = df[df["ipcc_code_2006_for_standard_report"] == "2.A.1"].copy()
 
+df_totals = pd.read_excel(PATH, sheet_name="TOTALS BY COUNTRY", header=9)
+
 year_cols = [c for c in df.columns if str(c).startswith("Y_")]
 years = [int(c.replace("Y_", "")) for c in year_cols]
 
 global_total_gg = cement[year_cols].sum()
 global_total_gt = global_total_gg / 1e6  # Gg → Gt
+all_sectors_gg = df_totals[year_cols].sum()  # total global todas as fontes
 
 FONTE = "Fonte: EDGAR GHG Community Database v2025 (JRC/CE, 2025). Código IPCC 2006: 2.A.1."
 CITATION_STYLE = dict(fontsize=7, color="#555555", style="italic")
@@ -117,8 +120,46 @@ fig.savefig(OUTPUT_DIR / "fig3_linhas_paises.png", dpi=300, bbox_inches="tight")
 plt.close()
 print("Figura 3 salva.")
 
+# ── Figura 4: Percentual cimento / total global ───────────────────────────────
+pct = (global_total_gg / all_sectors_gg) * 100
+
+fig, ax = plt.subplots(figsize=(10, 5.5))
+ax.plot(years, pct, color="#2980b9", linewidth=2.2, zorder=3)
+ax.fill_between(years, pct, alpha=0.10, color="#2980b9")
+
+peak_idx = pct.values.argmax()
+ax.annotate(
+    f"Pico: {pct.values[peak_idx]:.2f}% ({years[peak_idx]})",
+    xy=(years[peak_idx], pct.values[peak_idx]),
+    xytext=(years[peak_idx] - 10, pct.values[peak_idx] + 0.08),
+    arrowprops=dict(arrowstyle="->", color="#333333", lw=1.2),
+    fontsize=9,
+)
+
+ax.set_title(
+    "Participação das emissões de cimento no total global de GEE (1970–2024)",
+    **TITLE_STYLE,
+)
+ax.set_xlabel("Ano", fontsize=10)
+ax.set_ylabel("Participação no total global (%)", fontsize=10)
+ax.yaxis.set_major_formatter(mticker.FormatStrFormatter("%.2f%%"))
+ax.set_xlim(1970, 2024)
+ax.grid(True, linestyle="--", alpha=0.5)
+ax.tick_params(labelsize=9)
+FONTE_TOT = (
+    "Fonte: EDGAR GHG Community Database v2025 (JRC/CE, 2025). "
+    "Cimento: código IPCC 2006 2.A.1. Total: todas as fontes (GWP₁₀₀ AR5)."
+)
+fig.text(0.01, -0.02, FONTE_TOT, **CITATION_STYLE, transform=ax.transAxes)
+plt.tight_layout()
+fig.savefig(OUTPUT_DIR / "fig4_percentual_total_global.png", dpi=300, bbox_inches="tight")
+plt.close()
+print("Figura 4 salva.")
+
 print(f"\nTodos os gráficos salvos em: {OUTPUT_DIR.resolve()}")
 print("\nResumo dos dados:")
 print(f"  Global 1970: {global_total_gt['Y_1970']:.2f} Gt CO2eq")
 print(f"  Global 2024: {global_total_gt['Y_2024']:.2f} Gt CO2eq")
 print(f"  Crescimento: {(global_total_gt['Y_2024']/global_total_gt['Y_1970'] - 1)*100:.0f}%")
+print(f"  Participação cimento 1970: {pct['Y_1970']:.2f}%")
+print(f"  Participação cimento 2024: {pct['Y_2024']:.2f}%")
