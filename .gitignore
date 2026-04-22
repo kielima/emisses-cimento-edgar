@@ -1,0 +1,16 @@
+# Dados brutos (arquivos grandes — baixe via link no README)
+EDGAR_AR5_GHG_1970_2024/*.xlsx
+EDGAR_AR5_GHG_1970_2024/*.pbix
+EDGAR_AR5_GHG_1970_2024/desktop.ini
+
+# Imagem auxiliar
+CONSUMO DE CIMENTO NO BRASIL.jpg
+
+# Python
+__pycache__/
+*.pyc
+.env
+
+# Sistema
+.DS_Store
+Thumbs.db
